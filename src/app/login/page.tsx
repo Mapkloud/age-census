@@ -1,38 +1,79 @@
 import { redirect } from "next/navigation";
 import { requestMagicLink } from "@/app/actions/auth";
 import { auth } from "@/auth";
+import { AuthShell } from "@/components/ui/AuthShell";
+import { Button } from "@/components/ui/Button";
+import { Field, Input, describedBy } from "@/components/ui/Field";
+import { MailIcon } from "@/components/ui/Icons";
+import { Notice } from "@/components/ui/Notice";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export const metadata = { title: "Sign in" };
+
+/** Auth.js redirects back here with ?error=… when a link fails. */
+const errorCopy: Record<string, string> = {
+  Verification:
+    "That link has expired or was already used. Request a new one below.",
+  AccessDenied: "You don’t have access with that address.",
+  Configuration: "Sign-in isn’t configured correctly. Please try again later.",
+  Default: "Something went wrong while signing in. Please try again.",
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await auth();
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
     redirect(user?.birthDate && user.timezone ? "/map" : "/onboarding");
   }
 
+  const { error } = await searchParams;
+  const errorMessage = error ? errorCopy[error] ?? errorCopy.Default : null;
+
   return (
-    <main className="mx-auto flex min-h-full max-w-md flex-col justify-center gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold">Sign in</h1>
-      <p className="text-sm text-neutral-700">
-        Email is how we find you in 10–20 years. A magic link will be printed in
-        the server console in development.
-      </p>
-      <form action={requestMagicLink} className="flex flex-col gap-3">
-        <label className="text-sm">
-          Email
-          <input
-            required
-            type="email"
+    <AuthShell
+      eyebrow="Sign in"
+      title="Where should we find you?"
+      description="No password. We send a one-time link to your email, and that address is how we reach you in ten or twenty years."
+      footer={
+        <p>
+          In development, the link is printed in the server console instead of being
+          emailed.
+        </p>
+      }
+    >
+      {errorMessage ? (
+        <Notice tone="error" className="mb-6">
+          {errorMessage}
+        </Notice>
+      ) : null}
+      <form action={requestMagicLink} className="flex flex-col gap-5">
+        <Field
+          id="email"
+          label="Email"
+          hint="Use an address you expect to keep for a long time."
+        >
+          <Input
+            id="email"
             name="email"
-            className="mt-1 w-full border border-neutral-300 px-3 py-2"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            required
+            placeholder="you@example.com"
+            aria-describedby={describedBy("email", true, false)}
           />
-        </label>
-        <button type="submit" className="border border-neutral-800 px-4 py-2 text-sm">
-          Send magic link
-        </button>
+        </Field>
+        <Button type="submit" size="lg" className="w-full sm:w-auto">
+          <MailIcon size={18} />
+          Send me a link
+        </Button>
       </form>
-    </main>
+    </AuthShell>
   );
 }

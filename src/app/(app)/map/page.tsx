@@ -1,19 +1,18 @@
-import Link from "next/link";
 import { currentStampStatus, startCustomAge } from "@/app/actions/letters";
+import { AgeMap } from "@/components/AgeMap";
+import { StampStatus } from "@/components/StampStatus";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Field, Input, describedBy } from "@/components/ui/Field";
+import { PageShell } from "@/components/ui/PageShell";
 import { prisma } from "@/lib/prisma";
 import { requireOnboardedUser } from "@/lib/session";
-import { getCurrentAge } from "@/modules/age";
-import { buildChairs } from "@/modules/letters";
+import { getCurrentAge, MAX_TARGET_AGE } from "@/modules/age";
+import { buildChairs, MILESTONE_AGES } from "@/modules/letters";
 
 export const dynamic = "force-dynamic";
 
-const stateLabel = {
-  empty: "Empty",
-  draft: "Draft",
-  sealed: "Sealed — waiting",
-  unlocked: "Unlocked — ready to open",
-  opened: "Opened",
-};
+export const metadata = { title: "Age map" };
 
 export default async function MapPage() {
   const user = await requireOnboardedUser();
@@ -31,65 +30,69 @@ export default async function MapPage() {
     now,
   });
   const stamp = await currentStampStatus(user.id, user.timezone, now);
+  const pastMilestones = MILESTONE_AGES.filter((age) => age <= currentAge);
+  const readyCount = chairs.filter((chair) => chair.state === "unlocked").length;
 
   return (
-    <main className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Age map</h1>
-        <p className="mt-2 text-sm text-neutral-700">
-          You are {currentAge}. Chairs are future ages, not dates. This year&apos;s
-          stamp ({stamp.year}) is {stamp.spent ? "spent" : "available"}.
-        </p>
-      </div>
+    <PageShell
+      width="default"
+      eyebrow={`Age map · ${stamp.year}`}
+      title={
+        <>
+          You are {currentAge}.
+          {readyCount > 0 ? (
+            <>
+              {" "}
+              <span className="text-accent">
+                {readyCount === 1 ? "A letter is ready." : `${readyCount} letters are ready.`}
+              </span>
+            </>
+          ) : null}
+        </>
+      }
+      description="Chairs are ages, not dates. Pick one ahead of you and write to it. Sealing spends this year’s stamp; opening waits for the birthday."
+      aside={<StampStatus year={stamp.year} spent={stamp.spent} className="md:w-72" />}
+    >
+      <section aria-labelledby="map-heading" className="flex flex-col gap-10">
+        <h2 id="map-heading" className="sr-only">
+          Ages
+        </h2>
+        <AgeMap
+          chairs={chairs}
+          currentAge={currentAge}
+          birthDate={user.birthDate}
+          timeZone={user.timezone}
+          pastMilestones={pastMilestones}
+        />
 
-      <ul className="divide-y divide-neutral-200 border border-neutral-300">
-        {chairs.map((chair) => (
-          <li key={chair.age} className="flex items-center justify-between gap-4 px-3 py-3">
-            <div>
-              <p className="font-medium">Age {chair.age}</p>
-              <p className="text-sm text-neutral-600">
-                {stateLabel[chair.state]}
-                {chair.milestone ? " · milestone" : ""}
-              </p>
-            </div>
-            {chair.state === "empty" || chair.state === "draft" ? (
-              <Link href={`/write/${chair.age}`} className="text-sm underline">
-                Write
-              </Link>
-            ) : null}
-            {chair.state === "unlocked" && chair.letterId ? (
-              <Link href={`/open/${chair.letterId}`} className="text-sm underline">
-                Open
-              </Link>
-            ) : null}
-            {chair.state === "opened" && chair.letterId ? (
-              <Link href={`/open/${chair.letterId}`} className="text-sm underline">
-                Read
-              </Link>
-            ) : null}
-            {chair.state === "sealed" ? (
-              <span className="text-sm text-neutral-500">Waiting</span>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-
-      <form action={startCustomAge} className="flex flex-wrap items-end gap-3">
-        <label className="text-sm">
-          Write to another age
-          <input
-            required
-            type="number"
-            name="targetAge"
-            min={currentAge + 1}
-            max={120}
-            className="mt-1 block w-32 border border-neutral-300 px-3 py-2"
-          />
-        </label>
-        <button type="submit" className="border border-neutral-800 px-3 py-2 text-sm">
-          Address
-        </button>
-      </form>
-    </main>
+        <Card as="section" aria-labelledby="custom-age-heading" className="sm:ml-14">
+          <h2 id="custom-age-heading" className="font-serif text-xl text-ink">
+            Write to another age
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            Milestones are suggestions. Any age between {currentAge + 1} and {MAX_TARGET_AGE}{" "}
+            can hold a letter.
+          </p>
+          <form action={startCustomAge} className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <Field id="targetAge" label="Target age" className="sm:w-40">
+              <Input
+                id="targetAge"
+                name="targetAge"
+                type="number"
+                inputMode="numeric"
+                required
+                min={currentAge + 1}
+                max={MAX_TARGET_AGE}
+                placeholder={String(currentAge + 1)}
+                aria-describedby={describedBy("targetAge", false, false)}
+              />
+            </Field>
+            <Button type="submit" variant="secondary" className="h-11">
+              Address it
+            </Button>
+          </form>
+        </Card>
+      </section>
+    </PageShell>
   );
 }

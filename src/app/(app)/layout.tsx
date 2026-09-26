@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   await requireOnboardedUser();
   return (
-    <div className="min-h-full">
+    <div className="flex min-h-full flex-col">
       <AppNav />
-      <div className="mx-auto max-w-3xl px-4 py-8">{children}</div>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
