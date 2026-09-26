@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String?
+  email           String    @unique
+  emailVerified   DateTime?
+  image           String?
+  birthDate       DateTime? @db.Date
+  timezone        String?
+  birthDateLocked Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  accounts        Account[]
+  sessions        Session[]
+  stamps          Stamp[]
+  letters         Letter[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Stamp {
+  id        String    @id @default(cuid())
+  userId    String
+  year      Int
+  spentAt   DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  letter    Letter?
+
+  @@unique([userId, year])
+}
+
+model QuestionSet {
+  id        String         @id @default(cuid())
+  version   Int            @unique
+  keys      String[]
+  createdAt DateTime       @default(now())
+  letters   Letter[]
+  answers   CensusAnswer[]
+}
+
+model Letter {
+  id            String         @id @default(cuid())
+  userId        String
+  targetAge     Int
+  status        LetterStatus   @default(DRAFT)
+  body          String         @default("")
+  sealedAt      DateTime?
+  openedAt      DateTime?
+  stampId       String?        @unique
+  questionSetId String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stamp         Stamp?         @relation(fields: [stampId], references: [id])
+  questionSet   QuestionSet    @relation(fields: [questionSetId], references: [id])
+  answers       CensusAnswer[]
+
+  @@unique([userId, targetAge])
+}
+
+model CensusAnswer {
+  id            String      @id @default(cuid())
+  letterId      String
+  questionSetId String
+  key           String
+  value         String      @default("")
+  letter        Letter      @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  questionSet   QuestionSet @relation(fields: [questionSetId], references: [id])
+
+  @@unique([letterId, key])
+}
+
+enum LetterStatus {
+  DRAFT
+  SEALED
+  UNLOCKED
+  OPENED
+}
