@@ -12,22 +12,12 @@ import {
   parseCensusAnswers,
 } from "@/modules/census";
 import { assertCanSealDraft, assertCanWriteToAge } from "@/modules/letters";
-import { assertCanSealWithStamp, canSpendStamp } from "@/modules/stamps";
-import { calendarYear } from "@/modules/time";
 
 async function ensureQuestionSet() {
   return prisma.questionSet.upsert({
     where: { version: CENSUS_VERSION },
     update: { keys: [...CENSUS_KEYS] },
     create: { version: CENSUS_VERSION, keys: [...CENSUS_KEYS] },
-  });
-}
-
-async function ensureYearStamp(userId: string, year: number) {
-  return prisma.stamp.upsert({
-    where: { userId_year: { userId, year } },
-    update: {},
-    create: { userId, year },
   });
 }
 
@@ -95,7 +85,6 @@ export async function sealLetter(formData: FormData) {
   const body = String(formData.get("body") ?? "");
   const answers = formAnswers(formData);
   const currentAge = getCurrentAge(user.birthDate, user.timezone, now);
-  const year = calendarYear(user.timezone, now);
 
   await saveDraft(formData);
 
@@ -117,23 +106,11 @@ export async function sealLetter(formData: FormData) {
     });
     assertCompleteCensus(census);
 
-    const stamp = await tx.stamp.upsert({
-      where: { userId_year: { userId: user.id, year } },
-      update: {},
-      create: { userId: user.id, year },
-    });
-    assertCanSealWithStamp(stamp, user.timezone, now);
-
-    await tx.stamp.update({
-      where: { id: stamp.id },
-      data: { spentAt: now },
-    });
     await tx.letter.update({
       where: { id: letter.id },
       data: {
         status: "SEALED",
         sealedAt: now,
-        stampId: stamp.id,
         body: letter.body || body,
       },
     });
@@ -182,12 +159,11 @@ export async function startCustomAge(formData: FormData) {
   redirect(`/write/${targetAge}`);
 }
 
-export async function currentStampStatus(userId: string, timezone: string, now = new Date()) {
-  const year = calendarYear(timezone, now);
-  const stamp = await ensureYearStamp(userId, year);
-  return {
-    year,
-    spent: !canSpendStamp(stamp, timezone, now),
-    expired: false,
-  };
+export async function sealedTargetAges(userId: string): Promise<number[]> {
+  const letters = await prisma.letter.findMany({
+    where: { userId, status: { not: "DRAFT" } },
+    select: { targetAge: true },
+    orderBy: { targetAge: "asc" },
+  });
+  return letters.map((letter) => letter.targetAge);
 }

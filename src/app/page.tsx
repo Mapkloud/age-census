@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ButtonLink } from "@/components/ui/Button";
-import { ArrowRightIcon, LockIcon, PenIcon, StampIcon, UnlockIcon } from "@/components/ui/Icons";
+import { ArrowRightIcon, LockIcon, PenIcon, SealIcon, UnlockIcon } from "@/components/ui/Icons";
 import { StateMark } from "@/components/ui/StateBadge";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { prisma } from "@/lib/prisma";
@@ -18,9 +18,9 @@ const steps = [
     body: "Home isn’t a calendar. It’s the ages ahead of you — 30, 40, 50 — each an empty chair you can address a letter to.",
   },
   {
-    icon: StampIcon,
-    title: "One stamp a year",
-    body: "You get exactly one stamp per calendar year. Spend it to seal a letter, or let it expire on December 31. Missing a year is part of the ritual.",
+    icon: SealIcon,
+    title: "One letter per age",
+    body: "Seal a letter to each future age once — 40, 50, 60, and 70 in the same year if you want. That age stays sealed forever.",
   },
   {
     icon: LockIcon,
@@ -57,13 +57,13 @@ export default async function HomePage() {
         {/* Hero */}
         <section className="grid gap-12 py-16 sm:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div className="animate-rise">
-            <p className="eyebrow">A yearly ritual</p>
+            <p className="eyebrow">A slow ritual</p>
             <h1 className="mt-4 max-w-xl font-serif text-5xl leading-[1.02] text-ink sm:text-6xl">
               Write to the age you’ll become. Open it when you get there.
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">
-              Age Census is a slow correspondence with yourself. One sealed letter a
-              year, addressed to a future age, unlocked on that birthday.
+              Age Census is a slow correspondence with yourself. One sealed letter
+              per future age, unlocked on that birthday — as many ages as you choose.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <ButtonLink href="/login" size="lg">
@@ -96,8 +96,8 @@ export default async function HomePage() {
               ))}
             </ol>
             <div className="mt-6 flex items-center gap-3 rounded-md border border-dashed border-accent/50 bg-accent-soft/50 px-3 py-2 text-sm">
-              <StampIcon size={16} className="text-accent" />
-              <span className="font-medium">1 stamp left for {new Date().getFullYear()}</span>
+              <SealIcon size={16} className="text-accent" />
+              <span className="font-medium">One seal per age · many ages per year</span>
             </div>
           </div>
         </section>
@@ -178,7 +178,7 @@ export default async function HomePage() {
       </main>
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-sm text-muted sm:px-6">
-        Age Census · A yearly rite. Email is a backup, not the product.
+        Age Census · A correspondence across ages. Email is a backup, not the product.
       </footer>
     </div>
   );

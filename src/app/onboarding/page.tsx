@@ -46,7 +46,7 @@ export default async function OnboardingPage() {
         <Field
           id="timezone"
           label="Timezone"
-          hint="Defines your calendar year for the stamp and the moment your birthday begins. You can change this later."
+          hint="Defines the moment your birthday begins and when each letter unlocks. You can change this later."
         >
           <TimezoneSelect
             id="timezone"

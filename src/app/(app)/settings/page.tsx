@@ -82,7 +82,7 @@ export default async function SettingsPage() {
               <Field
                 id="timezone"
                 label="Timezone"
-                hint="Defines the calendar year for your stamp and the moment your birthday begins."
+                hint="Defines the moment your birthday begins and when each letter unlocks."
               >
                 <TimezoneSelect
                   id="timezone"
@@ -120,7 +120,7 @@ export default async function SettingsPage() {
                 <span className="eyebrow">Planned</span>
               </li>
               <li className="flex items-center justify-between gap-4">
-                <span>Yearly reminder that a stamp is waiting</span>
+                <span>Reminder about unsealed drafts</span>
                 <span className="eyebrow">Planned</span>
               </li>
             </ul>

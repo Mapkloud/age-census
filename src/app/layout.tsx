@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: "Age Census",
     template: "%s · Age Census",
   },
-  description: "A yearly rite: write to a future age, open on that birthday.",
+  description: "Write to a future age, seal once per age, open on that birthday.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

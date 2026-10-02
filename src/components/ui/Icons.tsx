@@ -18,7 +18,7 @@ function base({ size = 16, ...props }: IconProps) {
   };
 }
 
-/** Postage-stamp outline: the yearly stamp. */
+/** Postage-stamp outline (decorative / legacy icon). */
 export function StampIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

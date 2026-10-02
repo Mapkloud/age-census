@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { currentStampStatus, saveDraft, sealLetter } from "@/app/actions/letters";
+import { saveDraft, sealLetter, sealedTargetAges } from "@/app/actions/letters";
 import { SealConfirm } from "@/components/SealConfirm";
-import { StampStatus } from "@/components/StampStatus";
+import { SealedAgesSummary } from "@/components/SealedAgesSummary";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Field, Textarea } from "@/components/ui/Field";
 import { ArrowLeftIcon, LockIcon } from "@/components/ui/Icons";
@@ -35,7 +35,7 @@ export default async function WritePage({
   const user = await requireOnboardedUser();
   const now = new Date();
   const currentAge = getCurrentAge(user.birthDate, user.timezone, now);
-  const stamp = await currentStampStatus(user.id, user.timezone, now);
+  const sealedAges = await sealedTargetAges(user.id);
   const existing = await prisma.letter.findUnique({
     where: { userId_targetAge: { userId: user.id, targetAge } },
     include: { answers: true },
@@ -96,7 +96,7 @@ export default async function WritePage({
       description={`You are ${currentAge}. This opens ${yearsAway(currentAge, targetAge)}, on your birthday, ${unlockLabel}.`}
     >
       <div className="flex flex-col gap-3 border-y border-line py-4 sm:flex-row sm:items-center sm:justify-between">
-        <StampStatus year={stamp.year} spent={stamp.spent} variant="inline" />
+        <SealedAgesSummary sealedAges={sealedAges} variant="inline" />
         <p className="text-sm text-muted" aria-live="polite">
           {hasDraft && existing
             ? `Draft saved ${timeAgo(existing.updatedAt, now)}`
@@ -178,8 +178,6 @@ export default async function WritePage({
             <SealConfirm
               targetAge={targetAge}
               unlockDate={unlockLabel}
-              stampYear={stamp.year}
-              stampSpent={stamp.spent}
               requiredFields={[
                 ...CENSUS_KEYS.map((key) => ({ name: key, label: CENSUS_LABELS[key] })),
                 { name: "body", label: "the letter" },
@@ -188,8 +186,8 @@ export default async function WritePage({
             />
           </div>
           <p className="text-sm leading-relaxed text-muted">
-            Drafts are private and can be edited any time. Sealing is final and spends
-            your {stamp.year} stamp.
+            Drafts are private and can be edited any time. Sealing is final — this age
+            can only be sealed once.
           </p>
         </div>
       </form>

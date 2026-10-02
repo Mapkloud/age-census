@@ -7,8 +7,6 @@ import { SealIcon } from "@/components/ui/Icons";
 type SealConfirmProps = {
   targetAge: number;
   unlockDate: string;
-  stampYear: number;
-  stampSpent: boolean;
   requiredFields: Array<{ name: string; label: string }>;
   sealAction: (formData: FormData) => void | Promise<void>;
 };
@@ -21,8 +19,6 @@ type SealConfirmProps = {
 export function SealConfirm({
   targetAge,
   unlockDate,
-  stampYear,
-  stampSpent,
   requiredFields,
   sealAction,
 }: SealConfirmProps) {
@@ -60,18 +56,10 @@ export function SealConfirm({
         variant="primary"
         className="w-full sm:w-auto"
         onClick={openDialog}
-        disabled={stampSpent}
-        aria-describedby={stampSpent ? "seal-disabled-reason" : undefined}
       >
         <SealIcon size={16} />
         Seal this letter
       </Button>
-      {stampSpent ? (
-        <p id="seal-disabled-reason" className="text-sm text-muted sm:max-w-sm sm:text-right">
-          Your {stampYear} stamp is already used. You can keep this as a draft and
-          seal it next year.
-        </p>
-      ) : null}
       {missing.length > 0 ? (
         <p role="alert" className="text-sm text-accent sm:max-w-sm sm:text-right">
           Before sealing, answer: {missing.join(", ")}.
@@ -93,7 +81,7 @@ export function SealConfirm({
             {[
               "It cannot be edited, read, or deleted once sealed.",
               `It stays closed until your birthday on ${unlockDate}.`,
-              `This spends your only stamp for ${stampYear}.`,
+              `Age ${targetAge} can only be sealed once — you can still seal other ages this year.`,
             ].map((line) => (
               <li key={line} className="flex gap-2">
                 <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />

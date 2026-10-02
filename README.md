@@ -1,6 +1,6 @@
 # Age Census
 
-A yearly rite: write to a future age, spend one stamp per year, open the letter on that birthday.
+Write to future ages — one sealed letter per age, unlimited seals in a year — and open each on that birthday.
 
 ## Local
 

@@ -1,6 +1,6 @@
-import { currentStampStatus, startCustomAge } from "@/app/actions/letters";
+import { sealedTargetAges, startCustomAge } from "@/app/actions/letters";
 import { AgeMap } from "@/components/AgeMap";
-import { StampStatus } from "@/components/StampStatus";
+import { SealedAgesSummary } from "@/components/SealedAgesSummary";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Input, describedBy } from "@/components/ui/Field";
@@ -29,14 +29,14 @@ export default async function MapPage() {
     timeZone: user.timezone,
     now,
   });
-  const stamp = await currentStampStatus(user.id, user.timezone, now);
+  const sealedAges = await sealedTargetAges(user.id);
   const pastMilestones = MILESTONE_AGES.filter((age) => age <= currentAge);
   const readyCount = chairs.filter((chair) => chair.state === "unlocked").length;
 
   return (
     <PageShell
       width="default"
-      eyebrow={`Age map · ${stamp.year}`}
+      eyebrow="Age map"
       title={
         <>
           You are {currentAge}.
@@ -50,8 +50,8 @@ export default async function MapPage() {
           ) : null}
         </>
       }
-      description="Chairs are ages, not dates. Pick one ahead of you and write to it. Sealing spends this year’s stamp; opening waits for the birthday."
-      aside={<StampStatus year={stamp.year} spent={stamp.spent} className="md:w-72" />}
+      description="Chairs are ages, not dates. Pick one ahead of you and write to it. Each age seals once; opening waits for that birthday."
+      aside={<SealedAgesSummary sealedAges={sealedAges} className="md:w-72" />}
     >
       <section aria-labelledby="map-heading" className="flex flex-col gap-10">
         <h2 id="map-heading" className="sr-only">

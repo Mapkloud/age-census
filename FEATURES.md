@@ -1,13 +1,13 @@
 # Age Census features
 
-The product is a yearly rite, not a letter scheduler. Home is a map of **ages**. Email is a backup, not the product.
+The product is a rite of addressing future ages, not a letter scheduler. Home is a map of **ages**. Email is a backup, not the product.
 
 ## v1 (building now)
 
 ### Identity
 - Email magic-link sign-in (email is how we find you in 10–20 years)
 - Birth date required — current age and unlocks are computed from it
-- Timezone required — defines the calendar year for the stamp and the birthday for unlocks
+- Timezone required — defines the birthday for unlocks
 - Birth date locks after the first sealed letter so age cannot be gamed
 
 ### Age map (home)
@@ -16,11 +16,14 @@ The product is a yearly rite, not a letter scheduler. Home is a map of **ages**.
 - Chair states: empty, sealed (waiting), unlocked (ready to open), opened
 - Cannot address current age or any past age
 
-### Yearly stamp
-- Exactly one stamp per calendar year in the user’s timezone
-- Stamp is spent when a letter is **sealed**, not when a draft is saved
-- Unused stamp expires at year end — missing the year is part of the product
-- No seal without a stamp
+### Seals
+- Unlimited seals per calendar year — there is no yearly stamp quota
+- Constraint: **one sealed letter per future age**
+- Example: in the same year a user may seal letters to 40, 50, 60, and 70
+- Once a letter is sealed to 70, they cannot seal another to 70
+- Drafts to an age that already has a sealed letter are not sealable
+- One draft per age is fine until sealed
+- Seal is spent on that age, not on the year — unused years do not expire a right to write
 
 ### Census + letter
 - Five questions that never silently change (versioned set): **fear, love, work, home, regret**
@@ -38,7 +41,7 @@ The product is a yearly rite, not a letter scheduler. Home is a map of **ages**.
 
 - Change-email flow with verification
 - Export my data; delete account
-- Yearly reminder: you still have a stamp
+- Optional reminder about unsealed drafts
 - Email backup: notify + deep link when a chair unlocks
 - Reminder ~30 days before unlock if email may have gone stale
 
@@ -52,4 +55,4 @@ The product is a yearly rite, not a letter scheduler. Home is a map of **ages**.
 
 ## First vertical slice
 
-Create account → see map → seal one letter → stamp is spent.
+Create account → see map → seal letters to several future ages in one year (e.g. 40, 50, 60, 70) → a second seal to 70 is blocked.

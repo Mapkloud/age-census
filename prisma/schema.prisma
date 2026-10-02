@@ -20,7 +20,6 @@ model User {
   updatedAt       DateTime  @updatedAt
   accounts        Account[]
   sessions        Session[]
-  stamps          Stamp[]
   letters         Letter[]
 }
 
@@ -64,18 +63,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Stamp {
-  id        String    @id @default(cuid())
-  userId    String
-  year      Int
-  spentAt   DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  letter    Letter?
-
-  @@unique([userId, year])
-}
-
 model QuestionSet {
   id        String         @id @default(cuid())
   version   Int            @unique
@@ -93,12 +80,10 @@ model Letter {
   body          String         @default("")
   sealedAt      DateTime?
   openedAt      DateTime?
-  stampId       String?        @unique
   questionSetId String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stamp         Stamp?         @relation(fields: [stampId], references: [id])
   questionSet   QuestionSet    @relation(fields: [questionSetId], references: [id])
   answers       CensusAnswer[]
 

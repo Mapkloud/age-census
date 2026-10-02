@@ -82,6 +82,12 @@ export function assertCanWriteToAge(currentAge: number, targetAge: number): void
   }
 }
 
+export function assertCanSealToAge(status: LetterStatus, targetAge: number): void {
+  if (!canEditLetter(status)) {
+    throw new Error(`Age ${targetAge} already has a sealed letter`);
+  }
+}
+
 export function assertCanSealDraft(args: {
   status: LetterStatus;
   body: string;
@@ -89,9 +95,7 @@ export function assertCanSealDraft(args: {
   currentAge: number;
   targetAge: number;
 }): void {
-  if (!canEditLetter(args.status)) {
-    throw new Error("Seal is irreversible: drafts only");
-  }
+  assertCanSealToAge(args.status, args.targetAge);
   assertCanWriteToAge(args.currentAge, args.targetAge);
   if (!args.body.trim()) {
     throw new Error("Letter body is required to seal");

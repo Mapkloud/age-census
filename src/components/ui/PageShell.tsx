@@ -19,7 +19,7 @@ const widths = {
 
 /**
  * Standard page frame for signed-in screens: eyebrow, serif title, optional
- * description and an aside slot (e.g. stamp status) that sits beside the title
+ * description and an aside slot (e.g. sealed ages summary) beside the title
  * on wide screens.
  */
 export function PageShell({
