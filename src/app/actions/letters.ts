@@ -12,6 +12,7 @@ import {
   parseCensusAnswers,
 } from "@/modules/census";
 import { assertCanSealDraft, assertCanWriteToAge } from "@/modules/letters";
+import { assertCanConsumeSeal, assertCanStartNewAgeDraft } from "@/modules/seals";
 
 async function ensureQuestionSet() {
   return prisma.questionSet.upsert({
@@ -45,6 +46,12 @@ export async function saveDraft(formData: FormData) {
   });
   if (existing && existing.status !== "DRAFT") {
     throw new Error("Seal is irreversible");
+  }
+  if (!existing) {
+    if (user.sealBalance < 1) {
+      redirect("/seals?reason=new-age");
+    }
+    assertCanStartNewAgeDraft(user.sealBalance);
   }
 
   const questionSet = await ensureQuestionSet();
@@ -106,6 +113,21 @@ export async function sealLetter(formData: FormData) {
     });
     assertCompleteCensus(census);
 
+    if (letter.status === "DRAFT") {
+      const fresh = await tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { sealBalance: true },
+      });
+      assertCanConsumeSeal(fresh.sealBalance);
+      const spent = await tx.user.updateMany({
+        where: { id: user.id, sealBalance: { gte: 1 } },
+        data: { sealBalance: { decrement: 1 }, birthDateLocked: true },
+      });
+      if (spent.count !== 1) {
+        throw new Error("A seal is required to seal this letter");
+      }
+    }
+
     await tx.letter.update({
       where: { id: letter.id },
       data: {
@@ -113,10 +135,6 @@ export async function sealLetter(formData: FormData) {
         sealedAt: now,
         body: letter.body || body,
       },
-    });
-    await tx.user.update({
-      where: { id: user.id },
-      data: { birthDateLocked: true },
     });
   });
 
@@ -156,6 +174,13 @@ export async function startCustomAge(formData: FormData) {
   const targetAge = Number(formData.get("targetAge"));
   const currentAge = getCurrentAge(user.birthDate, user.timezone, new Date());
   assertCanWriteToAge(currentAge, targetAge);
+  const existing = await prisma.letter.findUnique({
+    where: { userId_targetAge: { userId: user.id, targetAge } },
+    select: { id: true },
+  });
+  if (!existing && user.sealBalance < 1) {
+    redirect("/seals?reason=new-age");
+  }
   redirect(`/write/${targetAge}`);
 }
 

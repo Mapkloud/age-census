@@ -2,48 +2,52 @@
 
 The product is a rite of addressing future ages, not a letter scheduler. Home is a map of **ages**. Email is a backup, not the product.
 
-## v1 (building now)
+**Rule:** no yearly seal quota · **one sealed letter per future age**. A **seal** is a credit (1 free on signup; more via purchase) consumed when sealing — not the retired yearly stamp.
+
+Pending work lives in two plans (do not duplicate long backlog here):
+
+- **Product / UX:** `/Users/evilemi/.cursor/plans/age-census-product-features.plan.md`
+- **Technical / ops:** `/Users/evilemi/.cursor/plans/age-census-technical.plan.md`
+
+## Done
 
 ### Identity
-- Email magic-link sign-in (email is how we find you in 10–20 years)
-- Birth date required — current age and unlocks are computed from it
-- Timezone required — defines the birthday for unlocks
-- Birth date locks after the first sealed letter so age cannot be gamed
+- Email magic-link sign-in (dev: link in server console)
+- Birth date + timezone required
+- Birth date locks after the first sealed letter
+- Change-email with verification (new address verified before it becomes primary)
+- Delete account with letter-data export before wipe (no standalone export)
+- Paid seals: 1 free on signup; packs $1 / $3.50 / $6 / $12; consume 1 on seal
 
-### Age map (home)
-- Home is future ages, not a date picker
-- Milestone chairs: 30, 35, 40, 50, 60, 70, 80, plus any custom target already written
-- Chair states: empty, sealed (waiting), unlocked (ready to open), opened
-- Cannot address current age or any past age
+### Age map
+- Home is future ages (milestones 30–80 + custom)
+- Chair states: empty, draft, sealed, unlocked, opened
+- Cannot address current or past age
 
-### Seals
-- Unlimited seals per calendar year — there is no yearly stamp quota
-- Constraint: **one sealed letter per future age**
-- Example: in the same year a user may seal letters to 40, 50, 60, and 70
-- Once a letter is sealed to 70, they cannot seal another to 70
-- Drafts to an age that already has a sealed letter are not sealable
-- One draft per age is fine until sealed
-- Seal is spent on that age, not on the year — unused years do not expire a right to write
+### Seals (ritual rule)
+- No yearly seal quota (unlimited ages per calendar year, subject to seal balance when paid seals ship)
+- One sealed letter per future age (second seal to the same age blocked)
+- Drafts per age until seal; seal irreversible
 
-### Census + letter
-- Five questions that never silently change (versioned set): **fear, love, work, home, regret**
-- Plus one free-form letter to the chosen age
-- Drafts allowed until seal
-- Seal is irreversible: no peek, no edit, no delete of content
-- Target is an integer age, not a calendar date
+### Census + unlock
+- Versioned census: fear, love, work, home, regret + free letter
+- Unlock on birthday they turn N; in-app unseal
+- Comparison view across opened censuses
+- Birthday unlock email: warm “letter waiting” notify + deep link (no letter body; open in-app)
+- ~30-day pre-unlock hygiene reminder (Settings CTA; no letter body)
+- Idle unsealed-draft reminder (one-time after ~7 days; write-route deep link)
+- Notify cron: `/api/cron/unlock-emails` runs stale + unlock + draft jobs
 
-### Unlock + comparison
-- A letter to age N unlocks on the birthday the user turns N
-- Opening happens in-app as an unseal
-- Comparison view: that year’s answers beside every earlier census for the same questions
+## In product plan
 
-## Later (do not treat as v1 scope)
+_(none pending)_
 
-- Change-email flow with verification
-- Export my data; delete account
-- Optional reminder about unsealed drafts
-- Email backup: notify + deep link when a chair unlocks
-- Reminder ~30 days before unlock if email may have gone stale
+## In technical plan
+
+- Real Resend (or equiv) magic-link delivery (transactional mailer already uses Resend when keyed)
+- Stamp module leftovers / migration verify
+- Tests, CI, git remote + deploy, secrets, security hardening
+- Finish or discard uncommitted SealConfirm polish
 
 ## Out of v1
 
@@ -52,7 +56,8 @@ The product is a rite of addressing future ages, not a letter scheduler. Home is
 - Reply-to-past-self thread
 - Public or generation feed
 - AI writing help
+- Yearly stamp quota (retired)
 
 ## First vertical slice
 
-Create account → see map → seal letters to several future ages in one year (e.g. 40, 50, 60, 70) → a second seal to 70 is blocked.
+Create account → see map → seal letters to several future ages in one year (e.g. 40, 50, 60, 70) → a second seal to 70 is blocked → open on birthday → compare.

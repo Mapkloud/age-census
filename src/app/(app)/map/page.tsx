@@ -1,5 +1,6 @@
 import { sealedTargetAges, startCustomAge } from "@/app/actions/letters";
 import { AgeMap } from "@/components/AgeMap";
+import { SealBalance } from "@/components/SealBalance";
 import { SealedAgesSummary } from "@/components/SealedAgesSummary";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -51,7 +52,12 @@ export default async function MapPage() {
         </>
       }
       description="Chairs are ages, not dates. Pick one ahead of you and write to it. Each age seals once; opening waits for that birthday."
-      aside={<SealedAgesSummary sealedAges={sealedAges} className="md:w-72" />}
+      aside={
+        <div className="flex flex-col gap-3 md:w-72">
+          <SealBalance balance={user.sealBalance} />
+          <SealedAgesSummary sealedAges={sealedAges} />
+        </div>
+      }
     >
       <section aria-labelledby="map-heading" className="flex flex-col gap-10">
         <h2 id="map-heading" className="sr-only">
@@ -63,6 +69,7 @@ export default async function MapPage() {
           birthDate={user.birthDate}
           timeZone={user.timezone}
           pastMilestones={pastMilestones}
+          canStartNewAge={user.sealBalance >= 1}
         />
 
         <Card as="section" aria-labelledby="custom-age-heading" className="sm:ml-14">

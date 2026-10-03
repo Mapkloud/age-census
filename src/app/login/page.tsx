@@ -24,15 +24,22 @@ const errorCopy: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
+  const { error, callbackUrl: rawCallback } = await searchParams;
+  const callbackUrl =
+    typeof rawCallback === "string" &&
+    rawCallback.startsWith("/") &&
+    !rawCallback.startsWith("//")
+      ? rawCallback
+      : "/map";
+
   const session = await auth();
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    redirect(user?.birthDate && user.timezone ? "/map" : "/onboarding");
+    redirect(user?.birthDate && user.timezone ? callbackUrl : "/onboarding");
   }
 
-  const { error } = await searchParams;
   const errorMessage = error ? errorCopy[error] ?? errorCopy.Default : null;
 
   return (
@@ -53,6 +60,9 @@ export default async function LoginPage({
         </Notice>
       ) : null}
       <form action={requestMagicLink} className="flex flex-col gap-5">
+        {callbackUrl !== "/map" ? (
+          <input type="hidden" name="callbackUrl" value={callbackUrl} />
+        ) : null}
         <Field
           id="email"
           label="Email"

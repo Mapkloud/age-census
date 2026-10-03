@@ -13,6 +13,7 @@ type AgeMapProps = {
   birthDate: Date;
   timeZone: string;
   pastMilestones: number[];
+  canStartNewAge?: boolean;
 };
 
 type Row =
@@ -24,7 +25,14 @@ type Row =
  * The home screen: a vertical map of ages. Rows are ordered by age; the
  * user's current age is a fixed marker; past ages are shown but disabled.
  */
-export function AgeMap({ chairs, currentAge, birthDate, timeZone, pastMilestones }: AgeMapProps) {
+export function AgeMap({
+  chairs,
+  currentAge,
+  birthDate,
+  timeZone,
+  pastMilestones,
+  canStartNewAge = true,
+}: AgeMapProps) {
   const nowRow: Row = { kind: "now", age: currentAge };
   const rows: Row[] = [
     ...pastMilestones
@@ -89,7 +97,14 @@ export function AgeMap({ chairs, currentAge, birthDate, timeZone, pastMilestones
             <span className="relative z-10 flex justify-center pt-7">
               <StateMark state={chair.state} className="size-3 ring-4 ring-paper" />
             </span>
-            <ChairCard chair={chair} unlockAt={unlockAt} currentAge={currentAge} timeZone={timeZone} isPast={isPast} />
+            <ChairCard
+              chair={chair}
+              unlockAt={unlockAt}
+              currentAge={currentAge}
+              timeZone={timeZone}
+              isPast={isPast}
+              canStartNewAge={canStartNewAge}
+            />
           </li>
         );
       })}
@@ -103,12 +118,14 @@ function ChairCard({
   currentAge,
   timeZone,
   isPast,
+  canStartNewAge,
 }: {
   chair: Chair;
   unlockAt: Date;
   currentAge: number;
   timeZone: string;
   isPast: boolean;
+  canStartNewAge: boolean;
 }) {
   const unlockLabel = formatDate(unlockAt, timeZone);
   const isActionable = chair.state === "unlocked";
@@ -165,9 +182,16 @@ function ChairCard({
 
       <div className="shrink-0 sm:pl-4">
         {chair.state === "empty" ? (
-          <ButtonLink href={`/write/${chair.age}`} variant="secondary" size="sm" aria-label={`Write to age ${chair.age}`}>
+          <ButtonLink
+            href={canStartNewAge ? `/write/${chair.age}` : "/seals?reason=new-age"}
+            variant="secondary"
+            size="sm"
+            aria-label={
+              canStartNewAge ? `Write to age ${chair.age}` : `Buy a seal to write to age ${chair.age}`
+            }
+          >
             <PenIcon size={14} />
-            Write
+            {canStartNewAge ? "Write" : "Need a seal"}
           </ButtonLink>
         ) : null}
         {chair.state === "draft" ? (

@@ -14,6 +14,36 @@ npm run dev
 
 Sign in with email. In development the magic link is printed in the server console.
 
+New accounts start with **1 free seal**. To buy more, set Stripe test keys in `.env`, or use **Grant (local)** on `/seals` when those keys are empty. After adding Stripe:
+
+```bash
+# optional local webhooks
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+Then add the printed `STRIPE_WEBHOOK_SECRET` to `.env`. The success page also credits a paid session once (`session_id`), so local checkout works without the CLI.
+
+### Notify emails (backup)
+
+`POST /api/cron/unlock-emails` runs three jobs:
+
+1. **~30-day hygiene** — sealed letters unlocking soon; Settings deep link
+2. **Birthday unlock** — warm “letter waiting” mail; `/open/[letterId]` deep link
+3. **Draft reminder** — idle unsealed drafts (~7 days); `/write/[age]` deep link
+
+No letter body in any email. Without `AUTH_RESEND_KEY`, messages print in the server console.
+
+```bash
+# local (CRON_SECRET optional when unset outside production)
+curl -X POST http://localhost:3000/api/cron/unlock-emails
+
+# production / scheduled host
+curl -X POST "$AUTH_URL/api/cron/unlock-emails" \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Schedule that endpoint about hourly (or daily) so unlock-day mail goes out near the user’s birthday midnight in their timezone.
+
 ```bash
 npm test
 npm run build

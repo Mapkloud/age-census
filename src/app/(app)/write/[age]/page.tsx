@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { saveDraft, sealLetter, sealedTargetAges } from "@/app/actions/letters";
+import { SealBalance } from "@/components/SealBalance";
 import { SealConfirm } from "@/components/SealConfirm";
 import { SealedAgesSummary } from "@/components/SealedAgesSummary";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -84,9 +85,32 @@ export default async function WritePage({
     }
   }
 
+  if (!existing && user.sealBalance < 1) {
+    return (
+      <PageShell
+        width="narrow"
+        eyebrow={`Age ${targetAge}`}
+        title="You need a seal first."
+        description="A new age can only be addressed when you have at least one seal. Existing drafts stay editable."
+      >
+        <Notice tone="warning" title="No seals left">
+          Buy a pack, then come back to write to age {targetAge}.
+        </Notice>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <ButtonLink href="/seals">Buy seals</ButtonLink>
+          <ButtonLink href="/map" variant="secondary">
+            <ArrowLeftIcon size={16} />
+            Back to the map
+          </ButtonLink>
+        </div>
+      </PageShell>
+    );
+  }
+
   const unlockAt = getUnlockInstant(user.birthDate, user.timezone, targetAge);
   const unlockLabel = formatDate(unlockAt, user.timezone);
   const hasDraft = Boolean(existing);
+  const canSeal = user.sealBalance >= 1;
 
   return (
     <PageShell
@@ -95,13 +119,16 @@ export default async function WritePage({
       title={<>To yourself at {targetAge}.</>}
       description={`You are ${currentAge}. This opens ${yearsAway(currentAge, targetAge)}, on your birthday, ${unlockLabel}.`}
     >
-      <div className="flex flex-col gap-3 border-y border-line py-4 sm:flex-row sm:items-center sm:justify-between">
-        <SealedAgesSummary sealedAges={sealedAges} variant="inline" />
-        <p className="text-sm text-muted" aria-live="polite">
-          {hasDraft && existing
-            ? `Draft saved ${timeAgo(existing.updatedAt, now)}`
-            : "Nothing saved yet"}
-        </p>
+      <div className="flex flex-col gap-3 border-y border-line py-4">
+        <SealBalance balance={user.sealBalance} variant="inline" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <SealedAgesSummary sealedAges={sealedAges} variant="inline" />
+          <p className="text-sm text-muted" aria-live="polite">
+            {hasDraft && existing
+              ? `Draft saved ${timeAgo(existing.updatedAt, now)}`
+              : "Nothing saved yet"}
+          </p>
+        </div>
       </div>
 
       <form id="letter-form" className="mt-12 flex flex-col gap-16">
@@ -175,19 +202,25 @@ export default async function WritePage({
             >
               Save draft
             </Button>
-            <SealConfirm
-              targetAge={targetAge}
-              unlockDate={unlockLabel}
-              requiredFields={[
-                ...CENSUS_KEYS.map((key) => ({ name: key, label: CENSUS_LABELS[key] })),
-                { name: "body", label: "the letter" },
-              ]}
-              sealAction={sealLetter}
-            />
+            {canSeal ? (
+              <SealConfirm
+                targetAge={targetAge}
+                unlockDate={unlockLabel}
+                requiredFields={[
+                  ...CENSUS_KEYS.map((key) => ({ name: key, label: CENSUS_LABELS[key] })),
+                  { name: "body", label: "the letter" },
+                ]}
+                sealAction={sealLetter}
+              />
+            ) : (
+              <ButtonLink href="/seals?reason=new-age" className="w-full sm:w-auto">
+                Buy a seal to finish
+              </ButtonLink>
+            )}
           </div>
           <p className="text-sm leading-relaxed text-muted">
-            Drafts are private and can be edited any time. Sealing is final — this age
-            can only be sealed once.
+            Drafts are private and can be edited any time. Sealing spends one seal
+            and is final — this age can only be sealed once.
           </p>
         </div>
       </form>

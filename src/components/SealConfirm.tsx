@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { SealIcon } from "@/components/ui/Icons";
 
@@ -25,7 +26,7 @@ export function SealConfirm({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [missing, setMissing] = useState<string[]>([]);
-  const [pending, setPending] = useState(false);
+  const { pending } = useFormStatus();
 
   function openDialog() {
     const form = triggerRef.current?.form;
@@ -70,7 +71,6 @@ export function SealConfirm({
         ref={dialogRef}
         aria-labelledby="seal-dialog-title"
         className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-line bg-raised p-0 text-ink shadow-none backdrop:bg-black/55 backdrop:backdrop-blur-[2px] open:animate-rise"
-        onClose={() => setPending(false)}
       >
         <div className="p-6 sm:p-7">
           <p className="eyebrow">Irreversible</p>
@@ -82,6 +82,7 @@ export function SealConfirm({
               "It cannot be edited, read, or deleted once sealed.",
               `It stays closed until your birthday on ${unlockDate}.`,
               `Age ${targetAge} can only be sealed once — you can still seal other ages this year.`,
+              "This spends 1 seal from your balance.",
             ].map((line) => (
               <li key={line} className="flex gap-2">
                 <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
@@ -100,7 +101,7 @@ export function SealConfirm({
             formAction={sealAction}
             variant="primary"
             disabled={pending}
-            onClick={() => setPending(true)}
+            aria-busy={pending}
           >
             <SealIcon size={16} />
             {pending ? "Sealing…" : "Seal it"}

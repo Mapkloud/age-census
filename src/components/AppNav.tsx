@@ -38,6 +38,18 @@ export function AppNav() {
               </Link>
             );
           })}
+          <Link
+            href="/seals"
+            className={cx(
+              "ml-1 rounded-md px-2 py-1.5 text-sm",
+              pathname === "/seals" || pathname.startsWith("/seals/")
+                ? "bg-surface font-medium text-ink"
+                : "text-muted hover:bg-surface hover:text-ink",
+            )}
+            aria-current={pathname === "/seals" ? "page" : undefined}
+          >
+            Seal balance
+          </Link>
           <form action={signOutAction} className="ml-2 border-l border-line pl-3">
             <button
               type="submit"

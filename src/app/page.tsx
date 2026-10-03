@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ButtonLink } from "@/components/ui/Button";
 import { ArrowRightIcon, LockIcon, PenIcon, SealIcon, UnlockIcon } from "@/components/ui/Icons";
+import { Notice } from "@/components/ui/Notice";
 import { StateMark } from "@/components/ui/StateBadge";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +35,12 @@ const steps = [
   },
 ];
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deleted?: string }>;
+}) {
+  const { deleted } = await searchParams;
   const session = await auth();
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
@@ -54,6 +60,15 @@ export default async function HomePage() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
+        {deleted === "1" ? (
+          <div className="pt-6">
+            <Notice tone="info" title="Account deleted">
+              Your letters and census answers are gone from Age Census. If you
+              downloaded the export first, keep that file somewhere safe.
+            </Notice>
+          </div>
+        ) : null}
+
         {/* Hero */}
         <section className="grid gap-12 py-16 sm:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div className="animate-rise">
@@ -70,7 +85,7 @@ export default async function HomePage() {
                 Begin your census
                 <ArrowRightIcon size={18} />
               </ButtonLink>
-              <span className="text-sm text-muted">Free · Email sign-in · No feed</span>
+              <span className="text-sm text-muted">1 free seal · Email sign-in · No feed</span>
             </div>
           </div>
 

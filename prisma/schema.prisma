@@ -8,19 +8,35 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  name            String?
-  email           String    @unique
-  emailVerified   DateTime?
-  image           String?
-  birthDate       DateTime? @db.Date
-  timezone        String?
-  birthDateLocked Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  accounts        Account[]
-  sessions        Session[]
-  letters         Letter[]
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String              @unique
+  emailVerified      DateTime?
+  image              String?
+  birthDate          DateTime?           @db.Date
+  timezone           String?
+  birthDateLocked    Boolean             @default(false)
+  sealBalance        Int                 @default(1)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  accounts           Account[]
+  sessions           Session[]
+  letters            Letter[]
+  emailChangeRequest EmailChangeRequest?
+  sealPurchases      SealPurchase[]
+}
+
+/// Pending change of User.email. Old email stays primary until the new
+/// address is verified via the one-time link sent to it.
+model EmailChangeRequest {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  newEmail  String
+  /// SHA-256 hex of the raw token from the verification URL
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -63,6 +79,22 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+/// Ledger row for a purchased (or locally granted) seal pack.
+model SealPurchase {
+  id              String    @id @default(cuid())
+  userId          String
+  packId          String
+  seals           Int
+  amountCents     Int
+  stripeSessionId String?   @unique
+  status          String    @default("PENDING")
+  createdAt       DateTime  @default(now())
+  paidAt          DateTime?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model QuestionSet {
   id        String         @id @default(cuid())
   version   Int            @unique
@@ -73,21 +105,30 @@ model QuestionSet {
 }
 
 model Letter {
-  id            String         @id @default(cuid())
-  userId        String
-  targetAge     Int
-  status        LetterStatus   @default(DRAFT)
-  body          String         @default("")
-  sealedAt      DateTime?
-  openedAt      DateTime?
-  questionSetId String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  questionSet   QuestionSet    @relation(fields: [questionSetId], references: [id])
-  answers       CensusAnswer[]
+  id                String         @id @default(cuid())
+  userId            String
+  targetAge         Int
+  status            LetterStatus   @default(DRAFT)
+  body              String         @default("")
+  sealedAt          DateTime?
+  openedAt          DateTime?
+  /// When the birthday unlock “letter waiting” email was sent (idempotency).
+  unlockEmailSentAt   DateTime?
+  /// When the ~30-day pre-unlock hygiene reminder was sent.
+  staleEmailSentAt    DateTime?
+  /// When the idle unsealed-draft reminder was sent.
+  draftReminderSentAt DateTime?
+  questionSetId       String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionSet         QuestionSet    @relation(fields: [questionSetId], references: [id])
+  answers             CensusAnswer[]
 
   @@unique([userId, targetAge])
+  @@index([status, unlockEmailSentAt])
+  @@index([status, staleEmailSentAt])
+  @@index([status, draftReminderSentAt])
 }
 
 model CensusAnswer {

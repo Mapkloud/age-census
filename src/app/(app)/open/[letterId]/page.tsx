@@ -23,7 +23,7 @@ export default async function OpenPage({
   params: Promise<{ letterId: string }>;
 }) {
   const { letterId } = await params;
-  const user = await requireOnboardedUser();
+  const user = await requireOnboardedUser(`/open/${letterId}`);
   const now = new Date();
   const letter = await prisma.letter.findFirst({
     where: { id: letterId, userId: user.id },
