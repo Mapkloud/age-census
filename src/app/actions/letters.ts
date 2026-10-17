@@ -2,6 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  decryptAnswers,
+  decryptLetterBody,
+  encryptCensusValue,
+  encryptLetterBody,
+} from "@/lib/crypto/content";
 import { prisma } from "@/lib/prisma";
 import { requireOnboardedUser } from "@/lib/session";
 import { getCurrentAge, isLetterUnlocked } from "@/modules/age";
@@ -57,25 +63,33 @@ export async function saveDraft(formData: FormData) {
   const questionSet = await ensureQuestionSet();
   const letter = await prisma.letter.upsert({
     where: { userId_targetAge: { userId: user.id, targetAge } },
-    update: { body, questionSetId: questionSet.id },
+    update: { questionSetId: questionSet.id },
     create: {
       userId: user.id,
       targetAge,
-      body,
+      body: "",
       questionSetId: questionSet.id,
     },
+  });
+
+  await prisma.letter.update({
+    where: { id: letter.id },
+    data: { body: encryptLetterBody(letter.id, body) },
   });
 
   await Promise.all(
     CENSUS_KEYS.map((key) =>
       prisma.censusAnswer.upsert({
         where: { letterId_key: { letterId: letter.id, key } },
-        update: { value: answers[key], questionSetId: questionSet.id },
+        update: {
+          value: encryptCensusValue(letter.id, key, answers[key]),
+          questionSetId: questionSet.id,
+        },
         create: {
           letterId: letter.id,
           questionSetId: questionSet.id,
           key,
-          value: answers[key],
+          value: encryptCensusValue(letter.id, key, answers[key]),
         },
       }),
     ),
@@ -90,7 +104,6 @@ export async function sealLetter(formData: FormData) {
   const now = new Date();
   const targetAge = Number(formData.get("targetAge"));
   const body = String(formData.get("body") ?? "");
-  const answers = formAnswers(formData);
   const currentAge = getCurrentAge(user.birthDate, user.timezone, now);
 
   await saveDraft(formData);
@@ -101,12 +114,14 @@ export async function sealLetter(formData: FormData) {
       include: { answers: true },
     });
 
+    const plainBody = decryptLetterBody(letter.id, letter.body) || body;
+    const plainAnswers = decryptAnswers(letter.id, letter.answers);
     const census = parseCensusAnswers(
-      Object.fromEntries(letter.answers.map((answer) => [answer.key, answer.value])),
+      Object.fromEntries(plainAnswers.map((answer) => [answer.key, answer.value])),
     );
     assertCanSealDraft({
       status: letter.status,
-      body: letter.body || body,
+      body: plainBody,
       answers: census,
       currentAge,
       targetAge,
@@ -133,7 +148,6 @@ export async function sealLetter(formData: FormData) {
       data: {
         status: "SEALED",
         sealedAt: now,
-        body: letter.body || body,
       },
     });
   });

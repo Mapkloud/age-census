@@ -14,6 +14,12 @@ npm run dev
 
 Sign in with email. In development the magic link is printed in the server console.
 
+Set `CONTENT_ENCRYPTION_KEY` (32-byte base64 from `openssl rand -base64 32`) so letter bodies and census answers are encrypted at rest. To wrap existing plaintext rows after enabling the key:
+
+```bash
+npx tsx scripts/encrypt-existing-content.ts
+```
+
 New accounts start with **1 free seal**. To buy more, set Stripe test keys in `.env`, or use **Grant (local)** on `/seals` when those keys are empty. After adding Stripe:
 
 ```bash
@@ -49,4 +55,4 @@ npm test
 npm run build
 ```
 
-See [FEATURES.md](FEATURES.md) for MVP vs later.
+See [FEATURES.md](FEATURES.md) for what shipped, the open backlog, and out-of-scope items (single tracker).

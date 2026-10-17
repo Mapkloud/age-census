@@ -1,4 +1,8 @@
 import { auth } from "@/auth";
+import {
+  decryptAnswers,
+  decryptLetterBody,
+} from "@/lib/crypto/content";
 import { prisma } from "@/lib/prisma";
 import { buildLetterDataExport } from "@/modules/account-export";
 
@@ -30,14 +34,11 @@ export async function GET() {
     letters: user.letters.map((letter) => ({
       targetAge: letter.targetAge,
       status: letter.status,
-      body: letter.body,
+      body: decryptLetterBody(letter.id, letter.body),
       sealedAt: letter.sealedAt,
       openedAt: letter.openedAt,
       createdAt: letter.createdAt,
-      answers: letter.answers.map((answer) => ({
-        key: answer.key,
-        value: answer.value,
-      })),
+      answers: decryptAnswers(letter.id, letter.answers),
     })),
   });
 

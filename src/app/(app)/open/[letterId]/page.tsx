@@ -6,6 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { ArrowLeftIcon, LockIcon, SealIcon, UnlockIcon } from "@/components/ui/Icons";
 import { Notice } from "@/components/ui/Notice";
 import { PageShell } from "@/components/ui/PageShell";
+import {
+  decryptAnswers,
+  decryptLetterBody,
+} from "@/lib/crypto/content";
 import { cx } from "@/lib/cx";
 import { formatDate, formatDateTime, yearsAway } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -123,22 +127,28 @@ export default async function OpenPage({
     orderBy: { sealedAt: "desc" },
   });
 
-  const columns = [letter, ...earlier].map((entry) => ({
-    id: entry.id,
-    isCurrent: entry.id === letter.id,
-    targetAge: entry.targetAge,
-    writtenAt: entry.sealedAt
-      ? getCurrentAge(user.birthDate, user.timezone, entry.sealedAt)
-      : null,
-    year: entry.sealedAt
-      ? new Intl.DateTimeFormat("en-US", { timeZone: user.timezone, year: "numeric" }).format(
-          entry.sealedAt,
-        )
-      : null,
-    answers: Object.fromEntries(entry.answers.map((answer) => [answer.key, answer.value])) as Partial<
-      Record<CensusKey, string>
-    >,
-  }));
+  const plainBody = decryptLetterBody(letter.id, letter.body);
+
+  const columns = [letter, ...earlier].map((entry) => {
+    const plainAnswers = decryptAnswers(entry.id, entry.answers);
+    return {
+      id: entry.id,
+      isCurrent: entry.id === letter.id,
+      targetAge: entry.targetAge,
+      writtenAt: entry.sealedAt
+        ? getCurrentAge(user.birthDate, user.timezone, entry.sealedAt)
+        : null,
+      year: entry.sealedAt
+        ? new Intl.DateTimeFormat("en-US", {
+            timeZone: user.timezone,
+            year: "numeric",
+          }).format(entry.sealedAt)
+        : null,
+      answers: Object.fromEntries(
+        plainAnswers.map((answer) => [answer.key, answer.value]),
+      ) as Partial<Record<CensusKey, string>>,
+    };
+  });
 
   const gridStyle = {
     "--cols": `repeat(${Math.min(columns.length, 3)}, minmax(0, 1fr))`,
@@ -171,7 +181,7 @@ export default async function OpenPage({
         <Card tone="raised" padding="lg">
           <p className="eyebrow">The letter</p>
           <div className="mt-5 whitespace-pre-wrap font-serif text-lg leading-8 text-ink sm:text-xl sm:leading-9">
-            {letter.body}
+            {plainBody}
           </div>
         </Card>
       </article>

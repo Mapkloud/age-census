@@ -9,6 +9,10 @@ import { ArrowLeftIcon, LockIcon } from "@/components/ui/Icons";
 import { Notice } from "@/components/ui/Notice";
 import { PageShell } from "@/components/ui/PageShell";
 import { CENSUS_PROMPTS, LETTER_PROMPT } from "@/lib/censusCopy";
+import {
+  decryptCensusValue,
+  decryptLetterBody,
+} from "@/lib/crypto/content";
 import { formatDate, timeAgo, yearsAway } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireOnboardedUser } from "@/lib/session";
@@ -81,9 +85,14 @@ export default async function WritePage({
   const answers = emptyCensusAnswers();
   for (const answer of existing?.answers ?? []) {
     if (answer.key in answers) {
-      answers[answer.key as keyof typeof answers] = answer.value;
+      answers[answer.key as keyof typeof answers] = decryptCensusValue(
+        existing!.id,
+        answer.key,
+        answer.value,
+      );
     }
   }
+  const draftBody = existing ? decryptLetterBody(existing.id, existing.body) : "";
 
   if (!existing && user.sealBalance < 1) {
     return (
@@ -183,7 +192,7 @@ export default async function WritePage({
             <Textarea
               id="body"
               name="body"
-              defaultValue={existing?.body ?? ""}
+              defaultValue={draftBody}
               rows={12}
               placeholder={`Dear ${targetAge},`}
               aria-describedby="body-hint"

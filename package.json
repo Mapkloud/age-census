@@ -10,6 +10,7 @@
     "test": "vitest run",
     "db:up": "docker compose up -d",
     "db:migrate": "prisma migrate dev",
+    "content:encrypt": "tsx scripts/encrypt-existing-content.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
