@@ -114,7 +114,7 @@ Letter-related JSON only: target age, status, body, census, timestamps, age-at-w
 
 - [ ] **Real magic-link email** — wire Auth.js `sendVerificationRequest` to Resend when `AUTH_RESEND_KEY` is set; keep console fallback locally
 - [ ] **Migration verify** — confirm `drop_stamps` (and later migrations) apply on a clean volume; document for fresh clones
-- [ ] **Tests + Vitest config** — more integration coverage (seal/spend, webhook idempotency); fix Vitest/Vite `configLoader` warning (`"type": "module"` or rename config)
+- [x] **Tests + Vitest config** — unit coverage for seal packs/spend + `creditPaidPack` stripeSessionId idempotency (mocked prisma); Vitest config as `vitest.config.mts` (no Vite CJS/ESM `configLoader` warning)
 - [ ] **CI** — lint + `npm test` + build once a git remote exists
 - [ ] **Git remote + deploy** — follow **Go-live roadmap** below
 - [ ] **Security pass** — rate-limit magic links; sealed content never returned before unlock; webhook signatures; never trust client pack size for credit
