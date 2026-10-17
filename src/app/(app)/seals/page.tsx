@@ -4,13 +4,17 @@ import { Card } from "@/components/ui/Card";
 import { Notice } from "@/components/ui/Notice";
 import { PageShell } from "@/components/ui/PageShell";
 import { SealIcon } from "@/components/ui/Icons";
-import { canGrantSealsLocally, isStripeConfigured } from "@/lib/stripe";
+import {
+  areSealPurchasesEnabled,
+  canGrantSealsLocally,
+  canStartSealCheckout,
+} from "@/lib/stripe";
 import { requireOnboardedUser } from "@/lib/session";
 import { SEAL_PACKS, formatSealBalance } from "@/modules/seals";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Buy seals" };
+export const metadata = { title: "Seal balance" };
 
 export default async function SealsPage({
   searchParams,
@@ -27,20 +31,22 @@ export default async function SealsPage({
   const params = await searchParams;
 
   let justCredited = false;
-  if (params.session_id) {
+  if (params.session_id && areSealPurchasesEnabled()) {
     const result = await fulfillCheckoutSession(params.session_id, user.id);
     justCredited = Boolean(result.ok && result.credited);
   }
 
   const refreshed = await requireOnboardedUser();
   const localGrant = canGrantSealsLocally();
-  const stripeReady = isStripeConfigured();
+  const checkoutReady = canStartSealCheckout();
+  const purchasesEnabled = areSealPurchasesEnabled();
+  const showUnderConstruction = !checkoutReady && !localGrant;
 
   return (
     <PageShell
       width="narrow"
       eyebrow="Seals"
-      title="Buy seals."
+      title={showUnderConstruction ? "Seal balance." : "Buy seals."}
       description="One free seal on signup. Each extra letter to a new age spends one seal when you seal it — drafts are free."
     >
       <div className="flex flex-col gap-8">
@@ -48,6 +54,9 @@ export default async function SealsPage({
           <Notice tone="warning" title="A seal is required">
             Addressing a new age needs at least one seal. Existing drafts stay
             editable.
+            {showUnderConstruction
+              ? " Buying more seals isn’t available yet — see below."
+              : null}
           </Notice>
         ) : null}
         {params.canceled === "1" ? (
@@ -66,10 +75,16 @@ export default async function SealsPage({
             the success page both credit the same pack once.
           </Notice>
         ) : null}
+        {params.error === "under-construction" || showUnderConstruction ? (
+          <Notice tone="warning" title="Payment system is under construction">
+            Purchasing seals isn’t available yet. You still get one free seal
+            when you join. We’re putting payment in place — check back soon.
+          </Notice>
+        ) : null}
         {params.error === "stripe" ? (
           <Notice tone="warning" title="Stripe isn’t configured">
-            Set STRIPE_SECRET_KEY in .env, or use the local grant below in
-            development.
+            Set STRIPE_SECRET_KEY and SEAL_PURCHASES_ENABLED=true, or use the
+            local grant below in development.
           </Notice>
         ) : null}
         {params.error === "pack" ? (
@@ -88,40 +103,60 @@ export default async function SealsPage({
           <SealIcon size={28} className="text-accent" />
         </Card>
 
-        <ul className="flex flex-col gap-3">
-          {SEAL_PACKS.map((pack) => (
-            <li key={pack.id}>
-              <Card padding="md" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-serif text-xl text-ink">{pack.label}</p>
-                  <p className="text-sm text-muted">{pack.priceLabel} USD</p>
-                </div>
-                {stripeReady ? (
-                  <form action={startSealCheckout}>
-                    <input type="hidden" name="packId" value={pack.id} />
-                    <Button type="submit" variant="primary">
-                      Buy {pack.label}
-                    </Button>
-                  </form>
-                ) : localGrant ? (
-                  <form action={grantDevSealPack}>
-                    <input type="hidden" name="packId" value={pack.id} />
-                    <Button type="submit" variant="secondary">
-                      Grant {pack.label} (local)
-                    </Button>
-                  </form>
-                ) : (
-                  <p className="text-sm text-muted">Checkout unavailable</p>
-                )}
-              </Card>
-            </li>
-          ))}
-        </ul>
+        {showUnderConstruction ? (
+          <Card padding="lg" className="text-center">
+            <p className="eyebrow">Coming soon</p>
+            <h2 className="mt-2 font-serif text-2xl text-ink">
+              Payment system is under construction
+            </h2>
+            <p className="mx-auto mt-3 max-w-prose text-sm leading-relaxed text-ink-soft">
+              Seal packs will appear here when checkout is ready. Until then,
+              use your free signup seal — and keep writing drafts; they don’t
+              spend a seal until you seal the letter.
+            </p>
+          </Card>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {SEAL_PACKS.map((pack) => (
+              <li key={pack.id}>
+                <Card
+                  padding="md"
+                  className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="font-serif text-xl text-ink">{pack.label}</p>
+                    <p className="text-sm text-muted">{pack.priceLabel} USD</p>
+                  </div>
+                  {checkoutReady ? (
+                    <form action={startSealCheckout}>
+                      <input type="hidden" name="packId" value={pack.id} />
+                      <Button type="submit" variant="primary">
+                        Buy {pack.label}
+                      </Button>
+                    </form>
+                  ) : (
+                    <form action={grantDevSealPack}>
+                      <input type="hidden" name="packId" value={pack.id} />
+                      <Button type="submit" variant="secondary">
+                        Grant {pack.label} (local)
+                      </Button>
+                    </form>
+                  )}
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {localGrant ? (
           <p className="text-sm text-muted">
             Stripe keys are not set, so packs are granted locally for
             development. No card is charged.
+          </p>
+        ) : null}
+        {purchasesEnabled && checkoutReady ? (
+          <p className="text-sm text-muted">
+            Checkout is live. Packs are billed through Stripe.
           </p>
         ) : null}
       </div>

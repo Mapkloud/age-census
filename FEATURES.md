@@ -40,7 +40,8 @@ Update this file when you finish or add work. Prefer checkboxes under **Backlog*
 - [x] Birth date + timezone onboarding; birth date locks after first sealed letter
 - [x] Change-email with verification (new address confirmed before it becomes primary)
 - [x] Delete account: optional letter-data JSON export, then irreversible wipe (no standalone export)
-- [x] Paid seals: balance starts at **1**; packs **$1 / $3.50 / $6 / $12** (1 / 5 / 10 / 20); buy on `/seals`; Stripe Checkout + webhook + success fulfill; local **Grant** when Stripe keys missing; soft-check balance to start a new age; consume **1** on seal
+- [x] Paid seals: balance starts at **1**; packs **$1 / $3.50 / $6 / $12** (1 / 5 / 10 / 20); Stripe Checkout + webhook + success fulfill when `SEAL_PURCHASES_ENABLED=true`; local **Grant** in non-production without Stripe keys; soft-check balance to start a new age; consume **1** on seal
+- [x] Production launch without payments: `/seals` shows **Payment system is under construction** until purchases are enabled (Buy/Grant hidden; checkout actions blocked)
 
 
 

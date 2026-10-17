@@ -27,7 +27,7 @@ Set `CONTENT_ENCRYPTION_KEY` (32-byte base64 from `openssl rand -base64 32`) so 
 npx tsx scripts/encrypt-existing-content.ts
 ```
 
-New accounts start with **1 free seal**. To buy more, set Stripe test keys in `.env`, or use **Grant (local)** on `/seals` when those keys are empty. After adding Stripe:
+New accounts start with **1 free seal**. Purchasing more seals is **off by default** (`SEAL_PURCHASES_ENABLED` unset) — `/seals` shows an under-construction notice. Locally, without Stripe keys, **Grant (local)** still works. To enable real checkout: set `SEAL_PURCHASES_ENABLED=true` and Stripe test keys. After adding Stripe:
 
 ```bash
 # optional local webhooks

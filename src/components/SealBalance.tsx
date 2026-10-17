@@ -18,7 +18,7 @@ export function SealBalance({
   const empty = count < 1;
   const headline = formatSealBalance(count);
   const detail = empty
-    ? "Buy a pack to address a new age or seal a letter."
+    ? "You need a seal to address a new age or seal a letter. Purchasing more is coming soon."
     : "A seal is spent when you seal a letter — not when you save a draft.";
 
   if (variant === "inline") {
@@ -49,7 +49,7 @@ export function SealBalance({
         <p className="text-xs leading-relaxed text-muted">{detail}</p>
       </div>
       <ButtonLink href="/seals" variant={empty ? "primary" : "secondary"} size="sm">
-        {empty ? "Buy seals" : "Buy more"}
+        Seal balance
       </ButtonLink>
     </div>
   );

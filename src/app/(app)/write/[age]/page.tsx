@@ -112,10 +112,11 @@ export default async function WritePage({
         description="A new age can only be addressed when you have at least one seal. Existing drafts stay editable."
       >
         <Notice tone="warning" title="No seals left">
-          Buy a pack, then come back to write to age {targetAge}.
+          You need a seal to address age {targetAge}. Purchasing more seals
+          isn’t available yet — check Seal balance for updates.
         </Notice>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/seals">Buy seals</ButtonLink>
+          <ButtonLink href="/seals">Seal balance</ButtonLink>
           <ButtonLink href="/map" variant="secondary">
             <ArrowLeftIcon size={16} />
             Back to the map
@@ -232,7 +233,7 @@ export default async function WritePage({
               />
             ) : (
               <ButtonLink href="/seals?reason=new-age" className="w-full sm:w-auto">
-                Buy a seal to finish
+                Seal balance
               </ButtonLink>
             )}
           </div>

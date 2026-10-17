@@ -2,18 +2,30 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { appBaseUrl, canGrantSealsLocally, getStripe } from "@/lib/stripe";
+import {
+  appBaseUrl,
+  areSealPurchasesEnabled,
+  canGrantSealsLocally,
+  canStartSealCheckout,
+  getStripe,
+} from "@/lib/stripe";
 import { requireOnboardedUser } from "@/lib/session";
 import { creditPaidPack, packFromMetadata } from "@/modules/seals/ledger";
 import { getSealPack } from "@/modules/seals";
 
 export async function startSealCheckout(formData: FormData) {
   const user = await requireOnboardedUser();
+  if (!areSealPurchasesEnabled()) {
+    redirect("/seals?error=under-construction");
+  }
   const pack = getSealPack(String(formData.get("packId") ?? ""));
   if (!pack) {
     redirect("/seals?error=pack");
   }
 
+  if (!canStartSealCheckout()) {
+    redirect("/seals?error=stripe");
+  }
   const stripe = getStripe();
   if (!stripe) {
     redirect("/seals?error=stripe");

@@ -1,7 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { getSealPack, type SealPack } from "./index";
 
-type Tx = Pick<PrismaClient, "sealPurchase" | "user">;
+type Tx = {
+  sealPurchase: Pick<
+    PrismaClient["sealPurchase"],
+    "findUnique" | "create" | "update"
+  >;
+  user: Pick<PrismaClient["user"], "findUniqueOrThrow" | "update">;
+};
 
 export async function creditPaidPack(
   tx: Tx,
