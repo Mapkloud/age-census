@@ -41,12 +41,12 @@ export default async function WritePage({
   const now = new Date();
   const currentAge = getCurrentAge(user.birthDate, user.timezone, now);
   const sealedAges = await sealedTargetAges(user.id);
-  const existing = await prisma.letter.findUnique({
+  const existingMeta = await prisma.letter.findUnique({
     where: { userId_targetAge: { userId: user.id, targetAge } },
-    include: { answers: true },
+    select: { id: true, status: true, sealedAt: true },
   });
 
-  if (existing && existing.status !== "DRAFT") {
+  if (existingMeta && existingMeta.status !== "DRAFT") {
     return (
       <PageShell
         width="narrow"
@@ -55,7 +55,7 @@ export default async function WritePage({
         description="Seal is irreversible: no peeking, no edits, no deleting. It will open on the birthday it was written for."
       >
         <Notice icon={<LockIcon size={16} />}>
-          Sealed{existing.sealedAt ? ` on ${formatDate(existing.sealedAt, user.timezone)}` : ""}.
+          Sealed{existingMeta.sealedAt ? ` on ${formatDate(existingMeta.sealedAt, user.timezone)}` : ""}.
           Opens on {formatDate(getUnlockInstant(user.birthDate, user.timezone, targetAge), user.timezone)}.
         </Notice>
         <ButtonLink href="/map" variant="secondary" className="mt-8">
@@ -65,6 +65,15 @@ export default async function WritePage({
       </PageShell>
     );
   }
+
+  // Drafts only — load body/answers after confirming status is DRAFT (or empty).
+  const existing =
+    existingMeta?.status === "DRAFT"
+      ? await prisma.letter.findFirst({
+          where: { id: existingMeta.id, status: "DRAFT" },
+          include: { answers: true },
+        })
+      : null;
 
   if (!existing && !canAddressAge(currentAge, targetAge)) {
     return (

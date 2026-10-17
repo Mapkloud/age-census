@@ -18,6 +18,8 @@ const errorCopy: Record<string, string> = {
     "That link has expired or was already used. Request a new one below.",
   AccessDenied: "You don’t have access with that address.",
   Configuration: "Sign-in isn’t configured correctly. Please try again later.",
+  RateLimited:
+    "Too many sign-in links requested. Wait about 15 minutes, then try again.",
   Default: "Something went wrong while signing in. Please try again.",
 };
 

@@ -79,6 +79,13 @@ Update this file when you finish or add work. Prefer checkboxes under **Backlog*
 - [x] Decrypt only on write / open / account export; metadata stays clear for map + jobs
 - [x] Legacy plaintext readable; migrate with `npm run content:encrypt`
 
+### Security pass
+
+- [x] Magic-link rate limit: max **5** requests per email (and per IP when available) per **15 minutes** (`src/lib/rate-limit.ts` + `requestMagicLink`); fail closed → `/login?error=RateLimited`. In-memory only — use Redis (or similar) for serverless / multi-instance.
+- [x] Sealed letters: open/write paths load metadata only until birthday unlock **and** in-app unseal (`OPENED`); no plaintext body/census in email or pre-open UI
+- [x] Stripe webhook: `constructEvent` signature verification; credit only when `payment_status === "paid"`
+- [x] Pack credit: `packFromMetadata` / checkout / webhook / fulfill use `getSealPack(packId)`; never trust raw client seals count (metadata seals must match catalog if present)
+
 
 
 ### Infra baseline
@@ -116,11 +123,9 @@ Letter-related JSON only: target age, status, body, census, timestamps, age-at-w
 ### Technical / ops
 
 - [x] **Real magic-link email** — Auth.js `sendVerificationRequest` + email-change verification use shared `sendEmail` (Resend when keyed, else console)
-- [x] **Migration verify** — fresh-clone docs (port 5433) + `npm run db:migrate:deploy`; local `prisma migrate status` reports all migrations applied
 - [x] **Tests + Vitest config** — unit coverage for seal packs/spend + `creditPaidPack` stripeSessionId idempotency (mocked prisma); Vitest config as `vitest.config.mts` (no Vite CJS/ESM `configLoader` warning)
-- [x] **CI** — `.github/workflows/ci.yml` (test, lint, build with dummy env); runs once a GitHub remote exists
-- [ ] **Git remote + deploy** — follow **Go-live roadmap** below (deploy prep in-repo: `vercel.json` cron + CI; still need remote, hosted DB, Vercel project, env, migrate deploy)
-- [ ] **Security pass** — rate-limit magic links; sealed content never returned before unlock; webhook signatures; never trust client pack size for credit
+- [ ] **Git remote + deploy** — follow **Go-live roadmap** below (deploy prep files already in-repo: `vercel.json` cron + CI workflow; still need remote, hosted DB, Vercel project, env, migrate deploy)
+- [x] **Security pass** — in-memory magic-link rate limit (5/email + IP / 15m; Redis later for multi-instance); sealed body/answers not loaded until opened; Stripe webhook signature + paid-only; pack credit via `getSealPack(packId)` only
 
 
 

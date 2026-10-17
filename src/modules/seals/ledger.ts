@@ -49,9 +49,25 @@ export async function creditPaidPack(
   return { credited: true, balance: user.sealBalance };
 }
 
-export function packFromMetadata(packId: string | undefined, sealsRaw: string | undefined): SealPack | null {
-  const byId = packId ? getSealPack(packId) : null;
-  if (byId) return byId;
-  if (sealsRaw) return getSealPack(sealsRaw);
-  return null;
+/**
+ * Resolve a pack solely from catalog `packId` via `getSealPack`.
+ * Never trust a raw seals count for credit size. If `seals` metadata is
+ * present it must match the catalog entry (fail closed on mismatch).
+ */
+export function packFromMetadata(
+  packId: string | undefined,
+  sealsRaw?: string | undefined,
+): SealPack | null {
+  if (!packId) return null;
+  const pack = getSealPack(packId);
+  if (!pack) return null;
+
+  if (sealsRaw !== undefined && sealsRaw !== "") {
+    const parsed = Number(sealsRaw);
+    if (!Number.isInteger(parsed) || parsed !== pack.seals) {
+      return null;
+    }
+  }
+
+  return pack;
 }

@@ -34,12 +34,17 @@ describe("seal packs", () => {
     expect(getSealPack("3")).toBeNull();
   });
 
-  it("resolves pack from webhook metadata (packId or seals string)", () => {
+  it("resolves pack from catalog packId only (never trust seals alone)", () => {
     expect(packFromMetadata("5", undefined)?.amountCents).toBe(350);
-    expect(packFromMetadata(undefined, "20")?.seals).toBe(20);
-    expect(packFromMetadata("bogus", "1")?.id).toBe("1");
+    expect(packFromMetadata("5", "5")?.seals).toBe(5);
+    expect(packFromMetadata("20")?.seals).toBe(20);
+    expect(packFromMetadata("20", "")?.seals).toBe(20);
+    expect(packFromMetadata(undefined, "20")).toBeNull();
+    expect(packFromMetadata("bogus", "1")).toBeNull();
+    expect(packFromMetadata("5", "99")).toBeNull();
+    expect(packFromMetadata("1", "20")).toBeNull();
+    expect(packFromMetadata("5", "not-a-number")).toBeNull();
     expect(packFromMetadata(undefined, undefined)).toBeNull();
-    expect(packFromMetadata("x", "y")).toBeNull();
   });
 });
 

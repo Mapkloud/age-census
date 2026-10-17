@@ -30,14 +30,16 @@ export async function POST(request: Request) {
   }
 
   const session = event.data.object;
-  if (session.payment_status !== "paid" && session.status !== "complete") {
+  // Require paid — do not credit on status=complete alone (unpaid / async methods).
+  if (session.payment_status !== "paid") {
     return NextResponse.json({ received: true });
   }
 
   const userId = session.metadata?.userId ?? session.client_reference_id;
+  // Pack size from catalog via packId only; seals metadata must match if present.
   const pack = packFromMetadata(session.metadata?.packId, session.metadata?.seals);
   if (!userId || !pack) {
-    return NextResponse.json({ error: "Missing pack metadata" }, { status: 400 });
+    return NextResponse.json({ error: "Missing or invalid pack metadata" }, { status: 400 });
   }
 
   await prisma.$transaction((tx) =>

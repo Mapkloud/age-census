@@ -29,9 +29,16 @@ export default async function OpenPage({
   const { letterId } = await params;
   const user = await requireOnboardedUser(`/open/${letterId}`);
   const now = new Date();
+  // Metadata only until the letter is opened — never load body/answers for sealed chairs.
   const letter = await prisma.letter.findFirst({
     where: { id: letterId, userId: user.id },
-    include: { answers: true },
+    select: {
+      id: true,
+      targetAge: true,
+      status: true,
+      sealedAt: true,
+      openedAt: true,
+    },
   });
   if (!letter || letter.status === "DRAFT") {
     notFound();
@@ -68,7 +75,7 @@ export default async function OpenPage({
     );
   }
 
-  // 2. Unlocked but not yet opened — the unseal moment.
+  // 2. Unlocked but not yet opened — the unseal moment (still no plaintext content).
   if (letter.status !== "OPENED") {
     return (
       <PageShell
@@ -116,24 +123,32 @@ export default async function OpenPage({
     );
   }
 
-  // 3. Opened — the letter and the comparison.
+  // 3. Opened — load and decrypt content only after birthday + intentional unseal.
+  const opened = await prisma.letter.findFirst({
+    where: { id: letter.id, userId: user.id, status: "OPENED" },
+    include: { answers: true },
+  });
+  if (!opened) {
+    notFound();
+  }
+
   const earlier = await prisma.letter.findMany({
     where: {
       userId: user.id,
       status: "OPENED",
-      sealedAt: { not: null, lt: letter.sealedAt ?? now },
+      sealedAt: { not: null, lt: opened.sealedAt ?? now },
     },
     include: { answers: true },
     orderBy: { sealedAt: "desc" },
   });
 
-  const plainBody = decryptLetterBody(letter.id, letter.body);
+  const plainBody = decryptLetterBody(opened.id, opened.body);
 
-  const columns = [letter, ...earlier].map((entry) => {
+  const columns = [opened, ...earlier].map((entry) => {
     const plainAnswers = decryptAnswers(entry.id, entry.answers);
     return {
       id: entry.id,
-      isCurrent: entry.id === letter.id,
+      isCurrent: entry.id === opened.id,
       targetAge: entry.targetAge,
       writtenAt: entry.sealedAt
         ? getCurrentAge(user.birthDate, user.timezone, entry.sealedAt)
