@@ -156,7 +156,7 @@ Local Docker Postgres does **not** go to production — you need a hosted databa
 
 **Checklist to go live**
 
-1. [ ] Push repo to GitHub/GitLab (or similar) — CI workflow is already in `.github/workflows/ci.yml`
+1. [x] Push repo to GitHub — https://github.com/Mapkloud/age-census (CI workflow in `.github/workflows/ci.yml`)
 2. [ ] Create Neon (or Supabase) project → copy `DATABASE_URL`
 3. [ ] Import project on Vercel → set env: `AUTH_SECRET`, `AUTH_URL` (prod URL), `DATABASE_URL`, `EMAIL_FROM`, `AUTH_RESEND_KEY`, `CONTENT_ENCRYPTION_KEY`, `CRON_SECRET`, optional `STRIPE_*`
 4. [ ] Run Prisma migrations against prod DB (`npm run db:migrate:deploy` / `prisma migrate deploy`)
