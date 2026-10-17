@@ -36,7 +36,7 @@ Update this file when you finish or add work. Prefer checkboxes under **Backlog*
 
 ### Identity & account
 
-- [x] Magic-link sign-in (Auth.js; console link in local/dev)
+- [x] Magic-link sign-in (Auth.js; Resend when `AUTH_RESEND_KEY` set, else console)
 - [x] Birth date + timezone onboarding; birth date locks after first sealed letter
 - [x] Change-email with verification (new address confirmed before it becomes primary)
 - [x] Delete account: optional letter-data JSON export, then irreversible wipe (no standalone export)
@@ -68,7 +68,7 @@ Update this file when you finish or add work. Prefer checkboxes under **Backlog*
 - [x] ~30-day pre-unlock hygiene reminder → Settings (`staleEmailSentAt`)
 - [x] Birthday unlock “letter waiting” email → `/open/[letterId]` (`unlockEmailSentAt`)
 - [x] Idle draft reminder (~7 days) → `/write/[age]` (`draftReminderSentAt`)
-- [x] Shared mailer: Resend when `AUTH_RESEND_KEY` set, else console
+- [x] Shared mailer: Resend when `AUTH_RESEND_KEY` set, else console (magic link, email-change, notify)
 
 
 
@@ -87,9 +87,12 @@ Update this file when you finish or add work. Prefer checkboxes under **Backlog*
 - [x] Postgres via Docker Compose (host **5433** → 5432)
 - [x] Prisma models (User, Letter unique on `[userId, targetAge]`, SealPurchase, notify sent-at fields, etc.); Stamp model removed
 - [x] Domain modules + unit tests (`age`, `census`, `letters`, seals, notify, crypto, …)
-- [x] Local scripts: `db:up`, `db:migrate`, `test`, `dev`
+- [x] Local scripts: `db:up`, `db:migrate`, `db:migrate:deploy`, `test`, `dev`
 - [x] Stamp model / unused-stamp notify removed (decorative `StampIcon` only if used)
 - [x] SealConfirm two-step dialog with `useFormStatus` pending state
+- [x] Migration verify — README fresh-clone path (Compose + migrate on host **5433**); local `prisma migrate status` up to date
+- [x] CI — `.github/workflows/ci.yml` (push/PR: `npm ci`, `prisma generate`, test, lint, build with dummy env). Needs a GitHub remote to run remotely
+- [x] Deploy prep files — `vercel.json` daily cron → `/api/cron/unlock-emails`; cron auth via Bearer `CRON_SECRET` (Vercel auto-sends when env is set)
 
 
 
@@ -112,7 +115,7 @@ Letter-related JSON only: target age, status, body, census, timestamps, age-at-w
 
 ### Technical / ops
 
-- [ ] **Real magic-link email** — wire Auth.js `sendVerificationRequest` to Resend when `AUTH_RESEND_KEY` is set; keep console fallback locally
+- [x] **Real magic-link email** — Auth.js `sendVerificationRequest` + email-change verification use shared `sendEmail` (Resend when keyed, else console)
 - [ ] **Migration verify** — confirm `drop_stamps` (and later migrations) apply on a clean volume; document for fresh clones
 - [x] **Tests + Vitest config** — unit coverage for seal packs/spend + `creditPaidPack` stripeSessionId idempotency (mocked prisma); Vitest config as `vitest.config.mts` (no Vite CJS/ESM `configLoader` warning)
 - [ ] **CI** — lint + `npm test` + build once a git remote exists
@@ -151,7 +154,7 @@ Local Docker Postgres does **not** go to production — you need a hosted databa
 2. [ ] Create Neon (or Supabase) project → copy `DATABASE_URL`
 3. [ ] Import project on Vercel → set env: `AUTH_SECRET`, `AUTH_URL` (prod URL), `DATABASE_URL`, `EMAIL_FROM`, `AUTH_RESEND_KEY`, `CONTENT_ENCRYPTION_KEY`, `CRON_SECRET`, optional `STRIPE_*`
 4. [ ] Run Prisma migrations against prod DB (`prisma migrate deploy`)
-5. [ ] Wire real Resend for magic links (backlog item above)
+5. [x] Wire real Resend for magic links (set `AUTH_RESEND_KEY` + verified `EMAIL_FROM` domain)
 6. [ ] Schedule cron → `POST /api/cron/unlock-emails` with `Authorization: Bearer $CRON_SECRET`
 7. [ ] (Optional) Buy domain → point DNS to Vercel → update `AUTH_URL` + Resend domain auth
 8. [ ] Payments: Stripe only if you have a supported country entity; otherwise keep Grant/test and add a TR provider later

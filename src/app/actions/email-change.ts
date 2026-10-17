@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { sendEmail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import {
@@ -13,6 +14,7 @@ import {
   isEmailChangeExpired,
   validateNewEmail,
 } from "@/modules/email-change";
+import { composeEmailChangeVerification } from "@/modules/email-change/email-change-email";
 
 function appOrigin(): string {
   return (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
@@ -20,20 +22,6 @@ function appOrigin(): string {
 
 function settingsRedirect(query: string): never {
   redirect(`/settings?${query}`);
-}
-
-/**
- * Dev / unconfigured Resend: print the link like Auth.js magic links.
- * Production email delivery for change-email rides the same console path
- * until real Resend is wired (technical plan).
- */
-function sendEmailChangeVerification(args: {
-  newEmail: string;
-  url: string;
-}): void {
-  console.log(
-    `\n[age-census] Email change verification for ${args.newEmail}\n${args.url}\n`,
-  );
 }
 
 export async function requestEmailChange(formData: FormData) {
@@ -78,7 +66,19 @@ export async function requestEmailChange(formData: FormData) {
   });
 
   const url = `${appOrigin()}/verify-email?token=${encodeURIComponent(raw)}`;
-  sendEmailChangeVerification({ newEmail: validated.email, url });
+  const content = composeEmailChangeVerification({
+    newEmail: validated.email,
+    url,
+  });
+  const delivery = await sendEmail({
+    to: content.to,
+    subject: content.subject,
+    text: content.text,
+    html: content.html,
+  });
+  if (!delivery.ok) {
+    throw new Error(delivery.error);
+  }
 
   revalidatePath("/settings");
   settingsRedirect("email=sent");

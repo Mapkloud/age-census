@@ -1,16 +1,27 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Resend from "next-auth/providers/resend";
+import { emailFrom, sendEmail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import { composeMagicLinkEmail } from "@/modules/auth/magic-link-email";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   trustHost: true,
   providers: [
     Resend({
-      from: process.env.EMAIL_FROM ?? "Age Census <noreply@localhost>",
+      from: emailFrom(),
       sendVerificationRequest: async ({ identifier, url }) => {
-        console.log(`\n[age-census] Magic link for ${identifier}\n${url}\n`);
+        const content = composeMagicLinkEmail({ email: identifier, url });
+        const result = await sendEmail({
+          to: content.to,
+          subject: content.subject,
+          text: content.text,
+          html: content.html,
+        });
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
       },
     }),
   ],

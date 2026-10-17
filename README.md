@@ -12,7 +12,7 @@ npx prisma migrate dev
 npm run dev
 ```
 
-Sign in with email. In development the magic link is printed in the server console.
+Sign in with email. Magic links (and email-change / notify mail) use Resend when `AUTH_RESEND_KEY` or `RESEND_API_KEY` is set; otherwise they print in the server console.
 
 Set `CONTENT_ENCRYPTION_KEY` (32-byte base64 from `openssl rand -base64 32`) so letter bodies and census answers are encrypted at rest. To wrap existing plaintext rows after enabling the key:
 
