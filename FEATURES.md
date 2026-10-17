@@ -64,7 +64,7 @@ Update this file when you finish or add work. Prefer checkboxes under **Backlog*
 
 ### Email-as-backup
 
-- [x] Cron `POST /api/cron/unlock-emails` (Bearer `CRON_SECRET` in production)
+- [x] Cron `GET`/`POST /api/cron/unlock-emails` (Bearer `CRON_SECRET` in production; Vercel Cron uses GET + auto Bearer when env set)
 - [x] ~30-day pre-unlock hygiene reminder → Settings (`staleEmailSentAt`)
 - [x] Birthday unlock “letter waiting” email → `/open/[letterId]` (`unlockEmailSentAt`)
 - [x] Idle draft reminder (~7 days) → `/write/[age]` (`draftReminderSentAt`)
@@ -116,10 +116,10 @@ Letter-related JSON only: target age, status, body, census, timestamps, age-at-w
 ### Technical / ops
 
 - [x] **Real magic-link email** — Auth.js `sendVerificationRequest` + email-change verification use shared `sendEmail` (Resend when keyed, else console)
-- [ ] **Migration verify** — confirm `drop_stamps` (and later migrations) apply on a clean volume; document for fresh clones
+- [x] **Migration verify** — fresh-clone docs (port 5433) + `npm run db:migrate:deploy`; local `prisma migrate status` reports all migrations applied
 - [x] **Tests + Vitest config** — unit coverage for seal packs/spend + `creditPaidPack` stripeSessionId idempotency (mocked prisma); Vitest config as `vitest.config.mts` (no Vite CJS/ESM `configLoader` warning)
-- [ ] **CI** — lint + `npm test` + build once a git remote exists
-- [ ] **Git remote + deploy** — follow **Go-live roadmap** below
+- [x] **CI** — `.github/workflows/ci.yml` (test, lint, build with dummy env); runs once a GitHub remote exists
+- [ ] **Git remote + deploy** — follow **Go-live roadmap** below (deploy prep in-repo: `vercel.json` cron + CI; still need remote, hosted DB, Vercel project, env, migrate deploy)
 - [ ] **Security pass** — rate-limit magic links; sealed content never returned before unlock; webhook signatures; never trust client pack size for credit
 
 
@@ -150,12 +150,12 @@ Local Docker Postgres does **not** go to production — you need a hosted databa
 
 **Checklist to go live**
 
-1. [ ] Push repo to GitHub/GitLab (or similar)
+1. [ ] Push repo to GitHub/GitLab (or similar) — CI workflow is already in `.github/workflows/ci.yml`
 2. [ ] Create Neon (or Supabase) project → copy `DATABASE_URL`
 3. [ ] Import project on Vercel → set env: `AUTH_SECRET`, `AUTH_URL` (prod URL), `DATABASE_URL`, `EMAIL_FROM`, `AUTH_RESEND_KEY`, `CONTENT_ENCRYPTION_KEY`, `CRON_SECRET`, optional `STRIPE_*`
-4. [ ] Run Prisma migrations against prod DB (`prisma migrate deploy`)
+4. [ ] Run Prisma migrations against prod DB (`npm run db:migrate:deploy` / `prisma migrate deploy`)
 5. [x] Wire real Resend for magic links (set `AUTH_RESEND_KEY` + verified `EMAIL_FROM` domain)
-6. [ ] Schedule cron → `POST /api/cron/unlock-emails` with `Authorization: Bearer $CRON_SECRET`
+6. [x] Cron schedule in-repo — `vercel.json` daily GET `/api/cron/unlock-emails`; set `CRON_SECRET` so Vercel sends `Authorization: Bearer …` (or ping the same way from an external cron). Still confirm it runs after first deploy.
 7. [ ] (Optional) Buy domain → point DNS to Vercel → update `AUTH_URL` + Resend domain auth
 8. [ ] Payments: Stripe only if you have a supported country entity; otherwise keep Grant/test and add a TR provider later
 

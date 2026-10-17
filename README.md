@@ -2,17 +2,24 @@
 
 Write to future ages — one sealed letter per age, unlimited seals in a year — and open each on that birthday.
 
-## Local
+## Local (fresh clone)
+
+Postgres is exposed on **host port 5433** (container 5432). Match that in `DATABASE_URL`.
 
 ```bash
 cp .env.example .env
 npm install
-npm run db:up
-npx prisma migrate dev
+npm run db:up                 # docker compose up -d
+# wait until healthy, then either:
+npm run db:migrate            # prisma migrate dev  (local / iterating)
+# or, apply committed migrations only (CI / prod-like):
+npm run db:migrate:deploy     # prisma migrate deploy
 npm run dev
 ```
 
-Sign in with email. Magic links (and email-change / notify mail) use Resend when `AUTH_RESEND_KEY` or `RESEND_API_KEY` is set; otherwise they print in the server console.
+Confirm schema state anytime with `npx prisma migrate status` (should report all migrations applied).
+
+Sign in with email. In development the magic link is printed in the server console.
 
 Set `CONTENT_ENCRYPTION_KEY` (32-byte base64 from `openssl rand -base64 32`) so letter bodies and census answers are encrypted at rest. To wrap existing plaintext rows after enabling the key:
 
@@ -31,7 +38,7 @@ Then add the printed `STRIPE_WEBHOOK_SECRET` to `.env`. The success page also cr
 
 ### Notify emails (backup)
 
-`POST /api/cron/unlock-emails` runs three jobs:
+`GET`/`POST /api/cron/unlock-emails` runs three jobs:
 
 1. **~30-day hygiene** — sealed letters unlocking soon; Settings deep link
 2. **Birthday unlock** — warm “letter waiting” mail; `/open/[letterId]` deep link
@@ -43,16 +50,22 @@ No letter body in any email. Without `AUTH_RESEND_KEY`, messages print in the se
 # local (CRON_SECRET optional when unset outside production)
 curl -X POST http://localhost:3000/api/cron/unlock-emails
 
-# production / scheduled host
+# production / scheduled host (Vercel Cron or external ping)
 curl -X POST "$AUTH_URL/api/cron/unlock-emails" \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-Schedule that endpoint about hourly (or daily) so unlock-day mail goes out near the user’s birthday midnight in their timezone.
+**Cron auth:** require `Authorization: Bearer $CRON_SECRET` in production. On Vercel, set project env `CRON_SECRET` — Vercel Cron sends that Bearer header automatically (see `vercel.json`). Do not put the secret in the query string. External schedulers that can set headers use the same Bearer pattern.
+
+`vercel.json` schedules the route **daily at 12:00 UTC** (`0 12 * * *`) so it fits Vercel Hobby (once/day). On Pro you can tighten the schedule if you want nearer birthday-midnight delivery.
 
 ```bash
 npm test
 npm run build
 ```
+
+### CI
+
+Push or open a PR against a GitHub remote to run `.github/workflows/ci.yml` (`npm ci` → `prisma generate` → test → lint → build with dummy env).
 
 See [FEATURES.md](FEATURES.md) for what shipped, the open backlog, and out-of-scope items (single tracker).
